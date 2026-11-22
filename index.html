@@ -194,6 +194,77 @@ dialog::backdrop{background:rgba(10,16,24,.55)}
 
 /* print */
 #print{display:none}
+
+/* ---------- شاشة الكاشير ---------- */
+.pos{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start}
+.pos-main{min-width:0}
+.pos-main .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.pos .chips .chip{padding:6px 12px}
+.pos-cart{position:sticky;top:12px;background:var(--surface);border-radius:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;max-height:calc(100dvh - 130px);overflow:hidden}
+.pc-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.pc-cust{all:unset;cursor:pointer;font-size:.85rem;padding:5px 10px;border-radius:999px;border:1px dashed var(--line);color:var(--muted);max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-cust.on{border-style:solid;border-color:var(--accent);color:var(--accent);font-weight:600}
+.pc-lines{overflow:auto;flex:1;min-height:80px;padding:4px 0}
+.pc-lines .none{padding:26px 14px;text-align:center;color:var(--muted)}
+.pl{display:grid;grid-template-columns:minmax(0,1fr) auto 0 76px;gap:8px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line)}
+.pl .nm{cursor:pointer;font-weight:500;line-height:1.3;overflow:hidden}
+.pl .nm small{display:block;color:var(--muted);font-family:var(--f-mono);font-size:.78rem;text-align:right}
+.pl .qs{display:flex;align-items:center;gap:2px}
+.pl .qs button{all:unset;cursor:pointer;width:30px;height:30px;border-radius:8px;background:var(--bg);text-align:center;font-size:1.1rem;line-height:30px}
+.pl .qs b{min-width:28px;text-align:center;font-family:var(--f-mono)}
+.pl .lt{font-family:var(--f-mono);font-weight:600;text-align:left}
+.pl.flash{animation:fl .6s}
+@keyframes fl{from{background:var(--warn-bg)}to{background:transparent}}
+.pc-foot{padding:12px 14px;border-top:1px solid var(--line);display:grid;gap:8px}
+.pc-foot .sub{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:.85rem;color:var(--muted)}
+.pc-total{display:flex;justify-content:space-between;align-items:baseline}
+.pc-total b{font-family:var(--f-mono);font-size:1.9rem}
+.pc-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.btn.pay{background:var(--sign);color:var(--sign-ink);border-color:var(--sign);font-size:1.15rem;padding:13px;font-weight:700;width:100%;justify-content:center}
+.btn.pay:disabled{opacity:.45}
+kbd{font-family:var(--f-mono);font-size:.7rem;border:1px solid currentColor;border-radius:4px;padding:0 4px;opacity:.6;margin-inline-start:6px}
+.hint.keys{margin-top:14px}
+@media (max-width:900px){
+  .pos{grid-template-columns:1fr}
+  .pos-main{padding-bottom:140px}
+  .pos-cart{position:fixed;inset:auto 0 0 0;top:auto;border-radius:16px 16px 0 0;z-index:6;max-height:72dvh;box-shadow:0 -6px 24px rgba(0,0,0,.22)}
+  .pos-cart:not(.open) .pc-lines,.pos-cart:not(.open) .pc-extra{display:none}
+  .pos-cart:not(.open) .pc-foot{grid-template-columns:1fr auto;align-items:center;padding-block:8px}
+  .pos-cart:not(.open) .pc-total b{font-size:1.4rem}
+  .pos-cart:not(.open) .btn.pay{width:auto;padding:11px 22px}
+  .pc-head{cursor:pointer}
+  .pc-head::before{content:"";position:absolute;top:5px;left:50%;width:40px;height:4px;border-radius:4px;background:var(--line);transform:translateX(-50%)}
+  .pos-cart .pc-head{position:relative;padding-top:16px}
+  .hint.keys{display:none}
+}
+/* الدفع */
+dialog.pay{width:min(460px,calc(100vw - 20px))}
+.paytot{display:grid;justify-items:center;background:var(--ink);color:var(--bg);border-radius:12px;padding:10px}
+.paytot b{font-family:var(--f-mono);font-size:2.3rem;line-height:1.1}
+.paytot small{opacity:.75}
+.paymodes{justify-content:center}
+.bigin{font-size:1.6rem !important;font-family:var(--f-mono);text-align:center;padding:10px !important}
+.quick{display:flex;gap:6px;flex-wrap:wrap}
+.quick button{all:unset;cursor:pointer;flex:1;min-width:58px;text-align:center;padding:9px 6px;border-radius:10px;background:var(--bg);font-family:var(--f-mono);font-weight:600}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.keypad button{all:unset;cursor:pointer;text-align:center;padding:12px 0;border-radius:10px;background:var(--bg);font-family:var(--f-mono);font-size:1.25rem;font-weight:600;user-select:none}
+.keypad button:active,.quick button:active{background:var(--line)}
+@media (min-width:901px) and (hover:hover){dialog.pay .keypad{display:none}}
+.change{display:flex;justify-content:space-between;align-items:baseline;border-radius:12px;padding:10px 14px;background:var(--ok-bg);color:var(--ok)}
+.change b{font-family:var(--f-mono);font-size:1.9rem}
+.change.short{background:var(--bad-bg);color:var(--bad)}
+.change.big{justify-content:center;gap:16px;margin-bottom:10px}
+#dlgB{align-content:start}
+@media (max-width:900px){body:has(.pos-cart) #toast{bottom:150px}}
+dialog.pay #payGo{position:sticky;bottom:0;box-shadow:0 -10px 14px var(--surface)}
+@media (max-width:520px){dialog.pay .keypad button{padding:9px 0}.paytot b{font-size:1.9rem}dialog.pay .bigin{font-size:1.3rem !important;padding:7px !important}}
+.change.big b{font-size:2.6rem}
+/* قفل الشاشة */
+#lock{position:fixed;inset:0;z-index:50;background:var(--bg);display:grid;place-items:center;padding:20px}
+#lock .box{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:22px;width:min(340px,100%);display:grid;gap:12px;text-align:center}
+#lock h1{margin:0;font-family:var(--f-display);font-size:1.3rem}
+#lock p{margin:0;color:var(--muted)}
+.pinin{font-size:2rem !important;text-align:center;letter-spacing:.5em;font-family:var(--f-mono)}
 @media print{
   body.printing>*:not(#print){display:none!important}
   body.printing #print{display:block;color:#000;background:#fff;font-family:var(--f-body)}
@@ -237,6 +308,7 @@ dialog::backdrop{background:rgba(10,16,24,.55)}
 
 <section id="gate" class="gate" hidden></section>
 
+<div id="lock" hidden></div>
 <div id="app" hidden>
   <header class="top"><div class="wrap">
     <div class="brand">
@@ -244,6 +316,7 @@ dialog::backdrop{background:rgba(10,16,24,.55)}
       <div class="me">
         <button class="pill" id="shiftPill" type="button" data-act="shift" hidden></button>
         <button class="pill" type="button" data-act="account"><b id="who"></b> <span class="role" id="whoRole"></span></button>
+        <button class="pill" type="button" data-act="lock" id="lockBtn" hidden title="قفل الشاشة">🔒 قفل</button>
         <button class="pill" type="button" data-act="logout">خروج</button>
       </div>
     </div>
@@ -302,9 +375,9 @@ function setMsg(el,m,kind){if(typeof el==="string")el=$(el);if(!el)return;el.cla
 let CFG={url:"",key:""}, TOKEN=LS.get("token",""), ME=null, busyN=0;
 function loadCfg(){const c=window.CONFIG||{};const s=LS.get("cfg",{});CFG={url:(c.url||s.url||"").trim().replace(/\/+$/,""),key:(c.key||s.key||"").trim()};return !!(CFG.url&&CFG.key)}
 function busy(on){busyN+=on?1:-1;$("busy").hidden=busyN<=0}
-async function api(fn,args){
+async function api(fn,args,tok){
   args=Object.assign({},args||{});
-  if(!["public_info","setup","login"].includes(fn))args.p_token=TOKEN;
+  if(!["public_info","setup","login","login_pin"].includes(fn))args.p_token=tok||TOKEN;
   const h={"Content-Type":"application/json","apikey":CFG.key};
   if(/^eyJ/.test(CFG.key))h.Authorization="Bearer "+CFG.key;
   let r;busy(1);
@@ -383,10 +456,11 @@ function loginScreen(shop,m){
   gate('<form class="box" data-form="login"><h1>'+esc(shop||"منظومة المخزن")+'</h1><p>ادخل باسم المستخدم وكلمة المرور.</p>'+
     '<label>اسم المستخدم<input class="f" name="user" dir="ltr" autocapitalize="none" autocomplete="username"></label>'+
     '<label>كلمة المرور<input class="f" name="pass" type="password" dir="ltr" autocomplete="current-password"></label>'+
+    '<label class="chk"><input type="checkbox" name="usepin"> دخول بالرمز السري (PIN) بدل كلمة المرور</label>'+
     '<div class="btns"><button class="btn primary">دخول</button></div><span class="msg'+(m?" err":"")+'" id="gMsg">'+esc(m||"")+'</span></form>');
   setTimeout(()=>{const i=document.querySelector('#gate [name=user]');if(i)i.focus()},50);
 }
-function endSession(m){TOKEN="";ME=null;LS.del("token");["dlg","dlg2"].forEach(d=>{if($(d).open)$(d).close()});loginScreen(document.title,m)}
+function endSession(m){TOKEN="";ME=null;try{invalidate()}catch(e){}if(window.location.hash)history.replaceState(null,"",location.pathname);LS.del("token");["dlg","dlg2"].forEach(d=>{if($(d).open)$(d).close()});loginScreen(document.title,m)}
 async function enter(){
   $("gate").hidden=true;$("app").hidden=false;
   $("shopName").textContent=ME.shop_name;document.title=ME.shop_name;
@@ -394,7 +468,8 @@ async function enter(){
   document.querySelectorAll(".cur").forEach(e=>e.textContent=cur());
   CART=LS.get("cart_"+ME.id,null)||newCart();
   await run(async()=>{await Promise.all([loadProducts(),loadParties(),loadUsers(),loadShift()])});
-  route();loadImages();
+  route();loadImages();lockBtn();
+  if(ME.has_pin&&LS.get("locked_"+ME.id,0))lockNow();else idleReset();
 }
 const FORMS={
   async cfg(f){const url=f.url.value.trim().replace(/\/+$/,""),key=f.key.value.trim();
@@ -404,8 +479,9 @@ const FORMS={
     await api("setup",{p_shop:f.shop.value,p_username:f.user.value.trim().toLowerCase(),p_name:f.name.value,p_password:f.pass.value});
     await FORMS.login(f)},null,"gMsg")},
   async login(f){const m=$("gMsg");await run(async()=>{
-    const r=await api("login",{p_username:f.user.value.trim(),p_password:f.pass.value});
-    if(!r.ok)throw new Error(r.error==="locked"?"الحساب مقفول "+r.minutes+" دقيقة بسبب محاولات غلط.":r.error==="off"?"هذا الحساب موقوف، كلّم المدير.":"اسم المستخدم أو كلمة المرور غلط.");
+    const pin=f.usepin&&f.usepin.checked;
+    const r=pin?await api("login_pin",{p_username:f.user.value.trim(),p_pin:digits(f.pass.value).trim()}):await api("login",{p_username:f.user.value.trim(),p_password:f.pass.value});
+    if(!r.ok)throw new Error(r.error==="nopin"?"هذا المستخدم ما عندهش رمز سري. ادخل بكلمة المرور وحطه من «حسابي».":r.error==="locked"?"الحساب مقفول "+r.minutes+" دقيقة بسبب محاولات غلط.":r.error==="off"?"هذا الحساب موقوف، كلّم المدير.":"اسم المستخدم أو كلمة المرور غلط.");
     TOKEN=r.token;LS.set("token",TOKEN);ME=await api("me");await enter()},null,m)},
 };
 document.addEventListener("submit",e=>{const f=e.target.closest("form[data-form]");if(!f)return;e.preventDefault();const h=FORMS[f.dataset.form];if(h)h(f,e)});
@@ -421,7 +497,7 @@ function route(){
   const ok=NAV[ME.role].map(x=>x[0]);let v=(location.hash||"").slice(1);if(!ok.includes(v))v=ok[0];
   if(v!==VIEW){VIEW=v;window.scrollTo(0,0)}
   $("tabs").innerHTML=NAV[ME.role].map(([k,t])=>'<a class="tab" href="#'+k+'"'+(k===VIEW?' aria-current="page"':'')+'>'+t+'</a>').join("");
-  $("posbar").hidden=VIEW!=="pos"||(!SHIFT&&isSeller());
+  $("posbar").hidden=true;
   refresh();
 }
 window.addEventListener("hashchange",route);

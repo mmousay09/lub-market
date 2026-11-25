@@ -266,6 +266,12 @@ dialog.pay #payGo{position:sticky;bottom:0;box-shadow:0 -10px 14px var(--surface
 #lock p{margin:0;color:var(--muted)}
 .pinin{font-size:2rem !important;text-align:center;letter-spacing:.5em;font-family:var(--f-mono)}
 
+/* ---------- المرحلة 3 ---------- */
+.chart14{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;align-items:end;height:150px}
+.c14{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px}
+.c14 i{display:block;width:100%;min-height:2px;background:var(--accent);border-radius:4px 4px 0 0}
+.c14:last-child i{background:var(--sign)}
+.c14 span{font-size:.7rem;color:var(--muted);font-family:var(--f-mono)}
 /* ---------- المرحلة 2 ---------- */
 .pill.off{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
 .pill.warn{background:var(--warn-bg);color:var(--ink)}
@@ -528,7 +534,7 @@ document.addEventListener("submit",e=>{const f=e.target.closest("form[data-form]
 /* ================================================================
    التنقل
    ================================================================ */
-const NAV={admin:[["pos","نقطة البيع"],["products","المنتجات"],["count","الجرد"],["buy","المشتريات"],["invoices","الفواتير"],["accounts","الحسابات"],["reports","التقارير"],["admin","الإدارة"]],
+const NAV={admin:[["home","الرئيسية"],["pos","نقطة البيع"],["products","المنتجات"],["count","الجرد"],["buy","المشتريات"],["po","أوامر الشراء"],["invoices","الفواتير"],["accounts","الحسابات"],["reports","التقارير"],["admin","الإدارة"]],
   seller:[["pos","نقطة البيع"],["invoices","مبيعاتي"],["accounts","العملاء"],["products","المنتجات"]],
   store:[["products","المنتجات"],["count","الجرد"]]};
 function route(){

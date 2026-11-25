@@ -266,6 +266,18 @@ dialog.pay #payGo{position:sticky;bottom:0;box-shadow:0 -10px 14px var(--surface
 #lock p{margin:0;color:var(--muted)}
 .pinin{font-size:2rem !important;text-align:center;letter-spacing:.5em;font-family:var(--f-mono)}
 
+/* ---------- المرحلة 4 ---------- */
+.pl .promo{grid-column:1/-1;font-size:.78rem;color:var(--ok)}
+.card .vars{position:absolute;top:6px;left:6px;z-index:1;font-size:.72rem;background:var(--ink);color:var(--bg);padding:2px 8px;border-radius:999px}
+.card{position:relative}
+#cd{min-height:100vh;display:flex;flex-direction:column;background:var(--ink);color:#fff;padding:28px;gap:14px;font-family:var(--f-body)}
+.cdh{font-size:2rem;font-weight:800;text-align:center}
+#cdItems{flex:1;display:grid;align-content:start;gap:8px;font-size:1.35rem}
+.cdi{display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:6px}
+.cdi.off{color:#7ee2a8}
+.cdt{display:flex;justify-content:space-between;align-items:baseline;font-size:1.6rem;background:rgba(255,255,255,.08);border-radius:14px;padding:14px 20px}
+.cdt b{font-size:3.4rem;font-family:var(--f-mono)}
+.cdm{text-align:center;font-size:1.6rem;color:#f3d36b;min-height:2.2em}
 /* ---------- المرحلة 3 ---------- */
 .chart14{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;align-items:end;height:150px}
 .c14{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px}
@@ -511,7 +523,7 @@ async function enter(){
   $("who").textContent=ME.name;$("whoRole").textContent=ROLES[ME.role];
   document.querySelectorAll(".cur").forEach(e=>e.textContent=cur());
   CART=LS.get("cart_"+ME.id,null)||newCart();
-  await run(async()=>{await Promise.all([loadProducts(),loadParties(),loadUsers(),loadShift()])});
+  await run(async()=>{await Promise.all([loadProducts(),loadParties(),loadUsers(),loadShift(),loadPromos()])});
   route();loadImages();lockBtn();netPill();setTimeout(syncOutbox,800);
   if(DEV.name)$("whoRole").textContent=ROLES[ME.role]+" · "+DEV.name;
   if(ME.has_pin&&LS.get("locked_"+ME.id,0))lockNow();else idleReset();

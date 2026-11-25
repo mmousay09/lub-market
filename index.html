@@ -265,6 +265,30 @@ dialog.pay #payGo{position:sticky;bottom:0;box-shadow:0 -10px 14px var(--surface
 #lock h1{margin:0;font-family:var(--f-display);font-size:1.3rem}
 #lock p{margin:0;color:var(--muted)}
 .pinin{font-size:2rem !important;text-align:center;letter-spacing:.5em;font-family:var(--f-mono)}
+
+/* ---------- المرحلة 2 ---------- */
+.pill.off{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.pill.warn{background:var(--warn-bg);color:var(--ink)}
+.card .pkb{all:unset;cursor:pointer;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);margin-top:4px;display:inline-block}
+.card .pkb:hover{border-color:var(--accent);color:var(--accent)}
+.cam{position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.cam .camline{position:absolute;left:8%;right:8%;top:50%;height:2px;background:#f33;box-shadow:0 0 8px #f33}
+.cntq{display:flex;gap:8px;align-items:stretch}
+.cntq .f{flex:1}
+.cnt-hits .row{cursor:pointer}
+td.dpos{color:var(--ok)} td.dneg{color:var(--bad)}
+/* ملصقات السعر */
+.plbl{width:40mm;height:25mm;padding:1.2mm 1.5mm;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;page-break-after:always;break-after:page;font-family:var(--f-body);color:#000}
+.plbl .s{font-size:5.5pt;line-height:1;white-space:nowrap;overflow:hidden}
+.plbl .n{font-size:7pt;line-height:1.15;font-weight:700;max-height:2.3em;overflow:hidden}
+.plbl .pr{font-size:11pt;font-weight:800;font-family:var(--f-mono);line-height:1}
+.plbl .pr small{font-size:6pt;font-weight:600;font-family:var(--f-body)}
+.plbl svg{width:100%;height:7.5mm;display:block}
+.plbl .d{font-size:5.5pt;font-family:var(--f-mono);text-align:center;line-height:1;letter-spacing:.5px}
+.lsheet{display:grid;grid-template-columns:repeat(3,70mm);grid-auto-rows:37mm;justify-content:center}
+.lsheet .plbl{width:70mm;height:37mm;padding:3mm 4mm;page-break-after:auto;break-after:auto;border:.2mm dashed #bbb}
+.lsheet .plbl .n{font-size:9.5pt}.lsheet .plbl .pr{font-size:16pt}.lsheet .plbl svg{height:11mm}.lsheet .plbl .d{font-size:7pt}.lsheet .plbl .s{font-size:6.5pt}
 @media print{
   body.printing>*:not(#print){display:none!important}
   body.printing #print{display:block;color:#000;background:#fff;font-family:var(--f-body)}
@@ -316,6 +340,7 @@ dialog.pay #payGo{position:sticky;bottom:0;box-shadow:0 -10px 14px var(--surface
       <div class="me">
         <button class="pill" id="shiftPill" type="button" data-act="shift" hidden></button>
         <button class="pill" type="button" data-act="account"><b id="who"></b> <span class="role" id="whoRole"></span></button>
+        <button class="pill" type="button" data-act="outbox" id="netPill" hidden></button>
         <button class="pill" type="button" data-act="lock" id="lockBtn" hidden title="قفل الشاشة">🔒 قفل</button>
         <button class="pill" type="button" data-act="logout">خروج</button>
       </div>
@@ -375,6 +400,12 @@ function setMsg(el,m,kind){if(typeof el==="string")el=$(el);if(!el)return;el.cla
 let CFG={url:"",key:""}, TOKEN=LS.get("token",""), ME=null, busyN=0;
 function loadCfg(){const c=window.CONFIG||{};const s=LS.get("cfg",{});CFG={url:(c.url||s.url||"").trim().replace(/\/+$/,""),key:(c.key||s.key||"").trim()};return !!(CFG.url&&CFG.key)}
 function busy(on){busyN+=on?1:-1;$("busy").hidden=busyN<=0}
+let ONLINE=navigator.onLine!==false;
+function setOnline(v){if(ONLINE===v)return;ONLINE=v;if(typeof netPill==="function")netPill();if(v&&typeof syncOutbox==="function")setTimeout(syncOutbox,300)}
+window.addEventListener("online",()=>{if(typeof syncOutbox==="function")syncOutbox()});
+window.addEventListener("offline",()=>setOnline(false));
+/* يجيب من القاعدة ويخزن نسخة في الجهاز. لو النت مقطوع يرجع آخر نسخة */
+async function cached(k,fn){try{const v=await fn();LS.set("c_"+k,v);return v}catch(e){if(e.net){const v=LS.get("c_"+k,null);if(v!==null)return v}throw e}}
 async function api(fn,args,tok){
   args=Object.assign({},args||{});
   if(!["public_info","setup","login","login_pin"].includes(fn))args.p_token=tok||TOKEN;
@@ -382,7 +413,9 @@ async function api(fn,args,tok){
   if(/^eyJ/.test(CFG.key))h.Authorization="Bearer "+CFG.key;
   let r;busy(1);
   try{r=await fetch(CFG.url+"/rest/v1/rpc/"+fn,{method:"POST",headers:h,body:JSON.stringify(args)})}
-  catch(e){busy(0);throw new Error("ما قدرناش نوصلوا للقاعدة. تأكد من النت.")}
+  catch(e){busy(0);setOnline(false);const er=new Error("ما قدرناش نوصلوا للقاعدة. تأكد من النت.");er.net=true;throw er}
+  if(r.status>=500&&r.status!==500){busy(0);setOnline(false);const er=new Error("القاعدة ما ردتش ("+r.status+"). جرب بعد شوية.");er.net=true;throw er}
+  setOnline(true);
   const t=await r.text();busy(0);let j=null;try{j=t?JSON.parse(t):null}catch(e){}
   if(!r.ok){
     let m=(j&&(j.message||j.msg||j.error_description||j.hint))||("خطأ من القاعدة ("+r.status+")");
@@ -410,10 +443,10 @@ function indexProducts(){PB={};P.forEach(p=>{PB[p.id]=p;p.n=norm(p.name);p.k=nor
   $("dlCats").innerHTML=cats().map(c=>'<option value="'+esc(c)+'">').join("");
   $("dlProducts").innerHTML=P.map(p=>'<option value="'+esc(p.name)+'">').join("")}
 const cats=()=>[...new Set(P.map(p=>p.category).filter(Boolean))].sort();
-async function loadProducts(){P=await api("product_list");indexProducts()}
-async function loadParties(){if(!isStore())PARTIES=await api("party_list")}
-async function loadUsers(){if(isAdmin())USERS=await api("user_list")}
-async function loadShift(){SHIFT=isStore()?null:await api("shift_current");shiftPill()}
+async function loadProducts(){P=await cached("prod_"+ME.id,()=>api("product_list"));indexProducts()}
+async function loadParties(){if(!isStore())PARTIES=await cached("parties_"+ME.id,()=>api("party_list"))}
+async function loadUsers(){if(isAdmin())USERS=await cached("users",()=>api("user_list"))}
+async function loadShift(){SHIFT=isStore()?null:await cached("shift_"+ME.id,()=>api("shift_current"));shiftPill()}
 
 /* الصور: تتخزن في المتصفح، وما يتنزل إلا اللي تبدل */
 function placeholder(p){const c=["#fde8e4","#e4f0fd","#e8f6e9","#fdf3d9","#efe6fb","#e0f4f4"][p.id%6];
@@ -439,17 +472,22 @@ function cfgScreen(err){
     '<label>المفتاح العام (anon أو publishable)<input class="f" name="key" dir="ltr" value="'+esc(CFG.key)+'"></label>'+
     '<div class="hint">⚠️ لا تكتب مفتاح service_role أو secret.</div><div class="btns"><button class="btn primary">حفظ</button></div><span class="msg'+(err?" err":"")+'" id="gMsg">'+esc(err||"")+'</span></form>');
 }
+if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost"))window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 async function start(){
   if(!loadCfg())return cfgScreen();
   let info;
-  try{info=await api("public_info")}catch(e){return cfgScreen(e.message)}
+  try{info=await api("public_info")}catch(e){
+    const m=LS.get("c_me",null);
+    if(e.net&&TOKEN&&m){ME=m;document.title=ME.shop_name||"";return enter()}
+    return cfgScreen(e.message)}
   document.title=info.shop_name||"منظومة المخزن";
   if(info.needs_setup)return gate('<form class="box" data-form="setup"><h1>تجهيز المنظومة</h1><p>أول مرة: اعمل حساب المدير. هذي الشاشة تطلع مرة وحدة بس.</p>'+
     '<label>اسم المحل<input class="f" name="shop" autocomplete="off" value="'+esc(info.shop_name&&info.shop_name!=="اسم المحل"?info.shop_name:"")+'"></label><label>اسمك<input class="f" name="name" autocomplete="off"></label>'+
     '<label>اسم المستخدم (حروف إنجليزية)<input class="f" name="user" dir="ltr" autocapitalize="none" autocomplete="off"></label>'+
     '<label>كلمة المرور (6 خانات أو أكثر)<input class="f" name="pass" type="password" dir="ltr" autocomplete="new-password"></label>'+
     '<div class="btns"><button class="btn primary">تجهيز</button></div><span class="msg" id="gMsg"></span></form>');
-  if(TOKEN){try{ME=await api("me");return enter()}catch(e){TOKEN="";LS.del("token")}}
+  if(TOKEN){try{ME=await api("me");LS.set("c_me",ME);return enter()}catch(e){
+    const m=LS.get("c_me",null);if(e.net&&m){ME=m;return enter()}TOKEN="";LS.del("token")}}
   loginScreen(info.shop_name);
 }
 function loginScreen(shop,m){
@@ -468,7 +506,8 @@ async function enter(){
   document.querySelectorAll(".cur").forEach(e=>e.textContent=cur());
   CART=LS.get("cart_"+ME.id,null)||newCart();
   await run(async()=>{await Promise.all([loadProducts(),loadParties(),loadUsers(),loadShift()])});
-  route();loadImages();lockBtn();
+  route();loadImages();lockBtn();netPill();setTimeout(syncOutbox,800);
+  if(DEV.name)$("whoRole").textContent=ROLES[ME.role]+" · "+DEV.name;
   if(ME.has_pin&&LS.get("locked_"+ME.id,0))lockNow();else idleReset();
 }
 const FORMS={
@@ -482,16 +521,16 @@ const FORMS={
     const pin=f.usepin&&f.usepin.checked;
     const r=pin?await api("login_pin",{p_username:f.user.value.trim(),p_pin:digits(f.pass.value).trim()}):await api("login",{p_username:f.user.value.trim(),p_password:f.pass.value});
     if(!r.ok)throw new Error(r.error==="nopin"?"هذا المستخدم ما عندهش رمز سري. ادخل بكلمة المرور وحطه من «حسابي».":r.error==="locked"?"الحساب مقفول "+r.minutes+" دقيقة بسبب محاولات غلط.":r.error==="off"?"هذا الحساب موقوف، كلّم المدير.":"اسم المستخدم أو كلمة المرور غلط.");
-    TOKEN=r.token;LS.set("token",TOKEN);ME=await api("me");await enter()},null,m)},
+    TOKEN=r.token;LS.set("token",TOKEN);ME=await api("me");LS.set("c_me",ME);await enter()},null,m)},
 };
 document.addEventListener("submit",e=>{const f=e.target.closest("form[data-form]");if(!f)return;e.preventDefault();const h=FORMS[f.dataset.form];if(h)h(f,e)});
 
 /* ================================================================
    التنقل
    ================================================================ */
-const NAV={admin:[["pos","نقطة البيع"],["products","المنتجات"],["buy","المشتريات"],["invoices","الفواتير"],["accounts","الحسابات"],["reports","التقارير"],["admin","الإدارة"]],
+const NAV={admin:[["pos","نقطة البيع"],["products","المنتجات"],["count","الجرد"],["buy","المشتريات"],["invoices","الفواتير"],["accounts","الحسابات"],["reports","التقارير"],["admin","الإدارة"]],
   seller:[["pos","نقطة البيع"],["invoices","مبيعاتي"],["accounts","العملاء"],["products","المنتجات"]],
-  store:[["products","المنتجات"]]};
+  store:[["products","المنتجات"],["count","الجرد"]]};
 function route(){
   if(!ME)return;
   const ok=NAV[ME.role].map(x=>x[0]);let v=(location.hash||"").slice(1);if(!ok.includes(v))v=ok[0];
@@ -544,10 +583,10 @@ function matchProducts(list,useFilter){
   const raw=norm(Q),terms=raw?raw.split(" ").filter(Boolean):[],rq=/^(?:رف\s*)?([a-z]\d*)$/i.exec(raw);
   const out=list.filter(p=>{
     if(CAT&&(p.category||"")!==CAT)return false;
-    if(useFilter){if(FILT==="placed"&&!has(p))return false;if(FILT==="unplaced"&&has(p))return false;if(FILT==="low"&&!isLow(p))return false;if(FILT==="out"&&!isOut(p))return false;if(FILT==="off"&&p.active)return false;}
+    if(useFilter){if(FILT==="placed"&&!has(p))return false;if(FILT==="unplaced"&&has(p))return false;if(FILT==="low"&&!isLow(p))return false;if(FILT==="out"&&!isOut(p))return false;if(FILT==="off"&&p.active)return false;if(FILT==="neg"&&!(p.qty<0))return false;}
     if(!terms.length)return true;
     if(rq&&has(p)){const r=p.rack.toLowerCase(),q=rq[1].toLowerCase();if(/\d/.test(q)?r===q:r.startsWith(q))return true}
-    if(String(p.id)===raw||(p.barcode&&p.barcode===digits(Q).trim()))return true;
+    if(String(p.id)===raw||(p.barcode&&p.barcode===digits(Q).trim())||(p.pack_barcode&&p.pack_barcode===digits(Q).trim()))return true;
     return terms.every(t=>(p.n+" "+p.k).includes(t));
   });
   return {list:out,terms};

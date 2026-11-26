@@ -266,6 +266,10 @@ dialog.pay #payGo{position:sticky;bottom:0;box-shadow:0 -10px 14px var(--surface
 #lock p{margin:0;color:var(--muted)}
 .pinin{font-size:2rem !important;text-align:center;letter-spacing:.5em;font-family:var(--f-mono)}
 
+/* الشعار */
+.hlogo{height:34px;width:auto;max-width:90px;object-fit:contain;vertical-align:middle;margin-inline-end:8px;border-radius:6px}
+.logobox{width:150px;height:110px;border:1px dashed var(--line);border-radius:12px;display:grid;place-items:center;background:#fff;overflow:hidden}
+.logobox img{max-width:100%;max-height:100%;object-fit:contain}
 /* ---------- المرحلة 4 ---------- */
 .pl .promo{grid-column:1/-1;font-size:.78rem;color:var(--ok)}
 .card .vars{position:absolute;top:6px;left:6px;z-index:1;font-size:.72rem;background:var(--ink);color:var(--bg);padding:2px 8px;border-radius:999px}
@@ -519,7 +523,7 @@ function loginScreen(shop,m){
 function endSession(m){TOKEN="";ME=null;try{invalidate()}catch(e){}if(window.location.hash)history.replaceState(null,"",location.pathname);LS.del("token");["dlg","dlg2"].forEach(d=>{if($(d).open)$(d).close()});loginScreen(document.title,m)}
 async function enter(){
   $("gate").hidden=true;$("app").hidden=false;
-  $("shopName").textContent=ME.shop_name;document.title=ME.shop_name;
+  brand();document.title=ME.shop_name;
   $("who").textContent=ME.name;$("whoRole").textContent=ROLES[ME.role];
   document.querySelectorAll(".cur").forEach(e=>e.textContent=cur());
   CART=LS.get("cart_"+ME.id,null)||newCart();

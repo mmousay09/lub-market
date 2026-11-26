@@ -14,8 +14,9 @@ const P80="size:80mm auto;margin:3mm";
 const PA4="size:A4;margin:12mm";
 const ltr=s=>'<span dir="ltr">'+esc(s)+'</span>';
 const contact=()=>[ME.shop_address?esc(ME.shop_address):"",ME.shop_phone?ltr(ME.shop_phone):""].filter(Boolean).join(" · ");
-function shopHead(){return '<h2>'+esc(ME.shop_name)+'</h2>'+(contact()?'<div class="c">'+contact()+'</div>':'')}
-function a4Head(title,sub){return '<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #000;padding-bottom:6px"><div><h1>'+esc(title)+'</h1><div>'+(sub||"")+'</div></div><div style="text-align:left"><b>'+esc(ME.shop_name)+'</b><br>'+contact()+'<br>'+dShow(Date.now())+'</div></div>'}
+const logoImg=st=>ME&&ME.logo?'<img src="'+ME.logo+'" alt="" style="'+st+'">':'';
+function shopHead(){return logoImg("max-height:18mm;max-width:50mm;display:block;margin:0 auto 2mm")+'<h2>'+esc(ME.shop_name)+'</h2>'+(contact()?'<div class="c">'+contact()+'</div>':'')}
+function a4Head(title,sub){return '<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #000;padding-bottom:6px"><div><h1>'+esc(title)+'</h1><div>'+(sub||"")+'</div></div><div style="text-align:left;display:flex;gap:10px;align-items:center"><div><b>'+esc(ME.shop_name)+'</b><br>'+contact()+'<br>'+dShow(Date.now())+'</div>'+logoImg("max-height:22mm;max-width:45mm")+'</div></div>'}
 
 /* ملصق A6 للمنتج (من الدليل الأصلي) */
 function printLabel(p){
@@ -240,11 +241,11 @@ ACT.pickVar=b=>{const p=PB[+b.dataset.id],pt=cartParty();openDlg2(p.name.replace
 ACT.addVar=b=>{if(addToCart(+b.dataset.id))$("dlg2").close()};
 /* شاشة الزبون: نافذة ثانية على نفس الجهاز (شاشة ثانية) */
 let DCH=null;try{DCH=new BroadcastChannel("lub-pos")}catch(e){}
-function dispSend(x){if(!DCH||!ME)return;try{DCH.postMessage(x||{shop:ME.shop_name,cur:cur(),items:CART.items.map(c=>({n:lineName(c),q:c.qty,t:r3(c.qty*c.price)})),sub:cartSub(),off:r3(cartSub()-cartTotal()),total:cartTotal(),party:(cartParty()||{}).name||""})}catch(e){}}
+function dispSend(x){if(!DCH||!ME)return;try{DCH.postMessage(x||{shop:ME.shop_name,logo:ME.logo||"",cur:cur(),items:CART.items.map(c=>({n:lineName(c),q:c.qty,t:r3(c.qty*c.price)})),sub:cartSub(),off:r3(cartSub()-cartTotal()),total:cartTotal(),party:(cartParty()||{}).name||""})}catch(e){}}
 ACT.custDisp=()=>{window.open(location.pathname+"?display=1","lubdisp","width=900,height=650");setTimeout(()=>dispSend(),800)};
 function displayMode(){document.body.innerHTML='<div id="cd"><div class="cdh" id="cdShop">…</div><div id="cdItems"></div><div class="cdt"><span>الإجمالي</span><b id="cdTot" dir="ltr">0</b></div><div id="cdMsg" class="cdm">أهلاً وسهلاً</div></div>';
   const R=d=>{if(d.done){$("cdMsg").innerHTML="شكراً لزيارتكم"+(d.change>0?'<br>الباقي لك <b dir="ltr">'+fm(d.change)+'</b>':'');$("cdItems").innerHTML="";$("cdTot").textContent=fm(d.total);return}
-    $("cdShop").textContent=d.shop;$("cdItems").innerHTML=d.items.slice(0,12).map(i=>'<div class="cdi"><span>'+esc(i.n)+' × '+i.q+'</span><b dir="ltr">'+fm(i.t)+'</b></div>').join("")+(d.items.length>12?'<div class="cdi"><span>…و'+(d.items.length-12)+' منتج</span></div>':'')+(d.off>0?'<div class="cdi off"><span>خصم وعروض</span><b dir="ltr">−'+fm(d.off)+'</b></div>':'');
+    $("cdShop").innerHTML=(d.logo?'<img src="'+d.logo+'" alt="" style="max-height:90px;display:block;margin:0 auto 8px">':'')+esc(d.shop);$("cdItems").innerHTML=d.items.slice(0,12).map(i=>'<div class="cdi"><span>'+esc(i.n)+' × '+i.q+'</span><b dir="ltr">'+fm(i.t)+'</b></div>').join("")+(d.items.length>12?'<div class="cdi"><span>…و'+(d.items.length-12)+' منتج</span></div>':'')+(d.off>0?'<div class="cdi off"><span>خصم وعروض</span><b dir="ltr">−'+fm(d.off)+'</b></div>':'');
     $("cdTot").textContent=fm(d.total)+" "+(d.cur||"");$("cdMsg").textContent=d.items.length?(d.party?"العميل: "+d.party:""):"أهلاً وسهلاً"};
   if(DCH)DCH.onmessage=e=>R(e.data)}
 ACT.posCam=()=>camScan("مسح بالكاميرا",c=>scanCode(c),true);
@@ -536,7 +537,7 @@ function saleDlg(s,fresh,change){
     (change!=null?'<div class="change big"><span>رجّع للزبون</span><b dir="ltr">'+fm(change)+'</b></div>':'')+
     (fresh?'<div class="msg ok" style="text-align:center;font-weight:600">انخصمت الكميات من المخزون'+(s.party_id?' وتسجلت على حساب «'+esc(s.party)+'»':'')+'</div>':'')+
     '<div class="rcbox">'+receiptHTML(s)+'</div>'+
-    '<div class="btns" style="justify-content:center"><button class="btn primary" data-act="printSale">🖨️ طباعة</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/'+(ph?waPhone(ph):"")+'?text='+encodeURIComponent(receiptText(s))+'">واتساب'+(ph?" للعميل":"")+'</a>'+
+    '<div class="btns" style="justify-content:center"><button class="btn primary" data-act="printSale">🖨️ طباعة</button>'+(s.id?'<button class="btn" data-act="printSaleA4">🖨️ فاتورة A4</button>':'')+'<a class="btn" target="_blank" rel="noopener" href="https://wa.me/'+(ph?waPhone(ph):"")+'?text='+encodeURIComponent(receiptText(s))+'">واتساب'+(ph?" للعميل":"")+'</a>'+
     (canRet?'<button class="btn" data-act="saleReturn">مرتجع</button>':'')+(can("void")&&s.status==="ok"&&!s.returns.length?'<button class="btn danger" data-act="saleVoid">إلغاء الفاتورة</button>':'')+(fresh?'<button class="btn" data-act="close" id="newSale">بيع جديد <kbd>Enter</kbd></button>':'')+'</div>');
   if(fresh)setTimeout(()=>{const b=$("newSale");if(b)b.focus()},60);
 }
@@ -657,7 +658,31 @@ async function openPur(id){const b=await run(()=>api("purchase_get",{p_id:id}));
   openDlg("فاتورة شراء #"+b.no,'<div class="sub"><span dir="ltr">'+tShow(b.at)+'</span><span>'+(b.party?esc(b.party):"شراء نقدي")+'</span>'+(b.ref?'<span>فاتورة المورد '+esc(b.ref)+'</span>':'')+'<span>سجلها '+esc(b.user)+'</span></div>'+
     tbl([["المنتج"],["الكمية",1],["التكلفة",1],["المجموع",1]],b.items.map(i=>'<tr><td class="nm">'+esc(i.name)+(i.returned?'<small>رجع منها '+i.returned+'</small>':'')+'</td><td class="r">'+i.qty+'</td>'+td(i.cost)+td(i.qty*i.cost)+'</tr>'),'<tr><td colspan="3">الإجمالي</td>'+td(b.total)+'</tr><tr><td colspan="3">المدفوع مع الفاتورة ('+METHODS[b.method]+')</td>'+td(b.paid)+'</tr>')+
     (b.returns.length?'<div class="hint">'+b.returns.map(r=>'مرتجع #'+r.no+' بتاريخ '+dShow(r.at)+': '+fm(r.total)+(r.refund?' (رجّع فلوس '+fm(r.refund)+')':'')).join("<br>")+'</div>':'')+(b.note?'<div class="hint">'+esc(b.note)+'</div>':'')+
-    '<div class="btns">'+(b.items.some(i=>i.qty>i.returned)?'<button class="btn" data-act="purReturn">مرتجع للمورد</button>':'')+'</div>')}
+    '<div class="btns"><button class="btn primary" data-act="printPur">🖨️ طباعة الفاتورة A4</button>'+(b.party_phone?'<a class="btn" target="_blank" rel="noopener" href="https://wa.me/'+waPhone(b.party_phone)+'?text='+encodeURIComponent(purText(b))+'">واتساب للمورد</a>':'')+(b.items.some(i=>i.qty>i.returned)?'<button class="btn" data-act="purReturn">مرتجع للمورد</button>':'')+'</div>')}
+function purText(b){return ME.shop_name+"\nفاتورة شراء #"+b.no+" · "+dShow(b.at)+(b.ref?" · فاتورتكم "+b.ref:"")+"\n"+b.items.map((i,k)=>(k+1)+". "+i.name+" — "+i.qty+" × "+fm(i.cost)+" = "+fm(i.qty*i.cost)).join("\n")+"\nالإجمالي: "+fm(b.total)+" "+cur()+"\nالمدفوع: "+fm(b.paid)+(b.total-b.paid>0.0005?"\nالباقي: "+fm(b.total-b.paid)+(b.due_date?" · يستحق "+dShow(b.due_date):""):"")}
+function invoiceA4(o){const tr=(a,v,bold)=>'<tr'+(bold?' style="font-weight:700"':'')+'><td colspan="'+(o.cols-1)+'" style="text-align:left">'+a+'</td><td>'+v+'</td></tr>';
+  return '<div class="a4"><div class="pg">'+a4Head(o.title,o.sub)+
+    '<div style="display:flex;justify-content:space-between;gap:20px;margin:10px 0 14px;font-size:10.5pt"><div>'+o.left+'</div><div style="text-align:left">'+o.right+'</div></div>'+
+    '<table><thead><tr>'+o.head.map(x=>'<th>'+x+'</th>').join("")+'</tr></thead><tbody>'+o.rows.join("")+'</tbody><tfoot>'+o.foot.map(f=>tr(f[0],f[1],f[2])).join("")+'</tfoot></table>'+
+    (o.after||'')+'<div style="display:flex;justify-content:space-between;margin-top:28mm;font-size:10pt"><div>توقيع '+o.sign1+': ..................</div><div>توقيع '+o.sign2+': ..................</div></div></div></div>'}
+ACT.printPur=()=>{const b=CURB;
+  printDoc(invoiceA4({title:"فاتورة شراء #"+b.no,sub:"المورد: <b>"+(b.party?esc(b.party):"شراء نقدي")+"</b>",
+    left:'التاريخ: <b dir="ltr">'+tShow(b.at)+'</b>'+(b.ref?'<br>رقم فاتورة المورد: <b>'+esc(b.ref)+'</b>':'')+'<br>سجلها: '+esc(b.user),
+    right:(b.party?'المورد: <b>'+esc(b.party)+'</b>'+(b.party_phone?'<br><span dir="ltr">'+esc(b.party_phone)+'</span>':''):'')+(b.due_date&&b.total-b.paid>0.0005?'<br>تاريخ الاستحقاق: <b dir="ltr">'+dShow(b.due_date)+'</b>':''),
+    cols:5,head:["#","المنتج","الكمية","التكلفة","المجموع"],
+    rows:b.items.map((i,k)=>'<tr><td>'+(k+1)+'</td><td>'+esc(i.name)+(i.returned?' <small>(رجع منها '+i.returned+')</small>':'')+'</td><td>'+i.qty+'</td><td>'+fm(i.cost)+'</td><td>'+fm(i.qty*i.cost)+'</td></tr>'),
+    foot:[["الإجمالي",fm(b.total)+" "+esc(cur()),1],["المدفوع ("+METHODS[b.method]+")",fm(b.paid)]].concat(b.total-b.paid>0.0005?[["الباقي للمورد",fm(b.total-b.paid),1]]:[]),
+    after:(b.returns.length?'<p>'+b.returns.map(r=>'مرتجع #'+r.no+' بتاريخ '+dShow(r.at)+': '+fm(r.total)).join("<br>")+'</p>':'')+(b.note?'<p>ملاحظة: '+esc(b.note)+'</p>':''),
+    sign1:"المستلم",sign2:"المورد"}),PA4)};
+ACT.printSaleA4=()=>{const s=CURS;
+  printDoc(invoiceA4({title:"فاتورة بيع #"+s.no,sub:s.party?"العميل: <b>"+esc(s.party)+"</b>":"بيع نقدي",
+    left:'التاريخ: <b dir="ltr">'+tShow(s.at)+'</b><br>البائع: '+esc(s.user||""),
+    right:(s.party?'العميل: <b>'+esc(s.party)+'</b>'+(s.party_phone?'<br><span dir="ltr">'+esc(s.party_phone)+'</span>':''):'')+(s.due_date&&s.total-s.paid>0.0005?'<br>تاريخ الاستحقاق: <b dir="ltr">'+dShow(s.due_date)+'</b>':''),
+    cols:5,head:["#","المنتج","الكمية","السعر","المجموع"],
+    rows:s.items.map((i,k)=>'<tr><td>'+(k+1)+'</td><td>'+esc(i.name)+(i.promo?' <small>('+esc(i.promo)+')</small>':'')+(i.returned?' <small>(رجع '+i.returned+')</small>':'')+'</td><td>'+i.qty+'</td><td>'+fm(i.price)+'</td><td>'+fm(i.qty*i.price)+'</td></tr>'),
+    foot:(s.discount>0?[["المجموع",fm(s.subtotal)],["الخصم والعروض",fm(s.discount)]]:[]).concat([["الإجمالي",fm(s.total)+" "+esc(cur()),1],["المدفوع",fm(s.paid)]]).concat(s.party_id&&s.total-s.paid>0.0005?[["الباقي على الحساب",fm(s.total-s.paid),1]]:[]),
+    after:(s.status==="void"?'<p><b>*** فاتورة ملغية ***</b></p>':'')+(s.note?'<p>ملاحظة: '+esc(s.note)+'</p>':'')+'<p style="text-align:center">'+esc(ME.receipt_footer||"")+'</p>',
+    sign1:"البائع",sign2:"العميل"}),PA4)};
 ACT.purReturn=()=>{const b=CURB,cr=!!b.party_id;
   openDlg("مرتجع من فاتورة شراء #"+b.no,'<form class="db" style="padding:0" data-form="purReturn">'+b.items.map(i=>{const left=i.qty-i.returned,p=PB[i.product_id];return '<div class="line"><div class="top"><div><b>'+esc(i.name)+'</b><small>انشرى '+i.qty+(i.returned?' · رجع قبل '+i.returned:'')+' · المتوفر توا '+(p?p.qty:0)+'</small></div></div><label>الكمية الراجعة (حدها '+Math.min(left,p?p.qty:0)+')<input class="f" name="q'+i.id+'" inputmode="numeric" value="0"></label></div>'}).join("")+
     (cr?'<div class="hint">قيمة المرتجع تنقص من اللي علينا لـ«'+esc(b.party)+'». لو رجّعلك فلوس اكتبها.</div><div class="grid2"><label>رجّعلك فلوس<input class="f" name="refund" inputmode="decimal" dir="ltr" placeholder="0"></label><label>طريقتها<select class="f" name="method">'+Object.keys(METHODS).map(k=>'<option value="'+k+'">'+METHODS[k]+'</option>').join("")+'</select></label></div>':'<div class="hint">شراء نقدي: قيمة المرتجع ترجعلك '+METHODS[b.method]+'.</div><input type="hidden" name="method" value="'+b.method+'">')+
@@ -877,6 +902,9 @@ VIEWS.admin=()=>{
   $("view").innerHTML='<div class="panel"><div class="ph2"><h2>المستخدمين</h2></div>'+tbl([["الاسم"],["اسم المستخدم"],["الدور"],["الحالة"]],USERS.map(u=>'<tr tabindex="0" data-act="user" data-id="'+u.id+'"><td class="nm">'+esc(u.name)+(u.id===ME.id?' <span class="tag n">انت</span>':'')+'</td><td dir="ltr" style="text-align:right" class="mono">'+esc(u.username)+'</td><td>'+ROLES[u.role]+'</td><td>'+(u.active?'<span class="tag g">شغال</span>':'<span class="tag">موقوف</span>')+'</td></tr>'))+'</div>'+
     '<div class="panel"><div class="ph2"><h2>إضافة مستخدم</h2></div><form class="pb" data-form="userAdd"><div class="grid4"><label>الاسم<input class="f" name="name" autocomplete="off"></label><label>اسم المستخدم (حروف إنجليزية)<input class="f" name="username" dir="ltr" autocapitalize="none" autocomplete="off"></label><label>كلمة المرور (6 خانات أو أكثر)<input class="f" name="password" dir="ltr" autocomplete="new-password"></label><label>الدور<select class="f" name="role"><option value="seller">بائع</option><option value="store">أمين مخزن</option><option value="admin">مدير</option></select></label></div>'+
       '<div class="hint">البائع: نقطة البيع ومبيعاته ودفعات العملاء، بدون تكلفة ولا أرباح. أمين المخزن: الأماكن والصور، بدون أسعار.</div><div class="btns"><button class="btn primary">إضافة</button><span class="msg" id="uaMsg"></span></div></form></div>'+
+    '<div class="panel"><div class="ph2"><h2>شعار المحل</h2></div><div class="pb"><div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap"><div class="logobox">'+(ME.logo?'<img src="'+ME.logo+'" alt="">':'<span class="hint">ما فيش شعار</span>')+'</div>'+
+      '<div class="btns"><label class="btn primary" style="cursor:pointer">اختيار صورة الشعار<input type="file" id="logoFile" accept="image/*" hidden></label>'+(ME.logo?'<button class="btn danger" type="button" data-act="logoDel">مسح الشعار</button>':'')+'</div></div>'+
+      '<div class="hint">يطلع فوق في المنظومة، وفي الإيصال، وفي كل الطباعة A4 (الفواتير، كشف الحساب، أوامر الشراء)، وفي شاشة الزبون. الأحسن صورة بخلفية بيضاء أو شفافة.</div><span class="msg" id="lgMsg"></span></div></div>'+
     '<div class="panel"><div class="ph2"><h2>الإعدادات</h2></div><form class="pb" data-form="settings"><div class="grid2"><label>اسم المحل<input class="f" name="shop_name" value="'+esc(ME.shop_name)+'"></label><label>العملة<input class="f" name="currency" value="'+esc(ME.currency)+'"></label>'+
       '<label>الهاتف (يطلع في الإيصال)<input class="f" name="shop_phone" dir="ltr" value="'+esc(ME.shop_phone)+'"></label><label>العنوان<input class="f" name="shop_address" value="'+esc(ME.shop_address)+'"></label>'+
       '<label>أقصى خصم للبائع (٪ من الفاتورة)<input class="f" name="max_seller_discount_pct" inputmode="decimal" dir="ltr" value="'+esc(ME.max_seller_discount_pct)+'"></label><label>حد التنبيه الافتراضي للمنتجات<input class="f" name="default_min_qty" inputmode="numeric" value="'+esc(ME.default_min_qty)+'"></label></div>'+
@@ -918,6 +946,16 @@ FORMS.promo=async f=>{const pr=f.prod.value.trim()?findP(f.prod.value):null;if(f
 {const _adm=VIEWS.admin;VIEWS.admin=()=>{_adm();renderPromos()}}
 ACT.promoTog=async b=>{const o=(window._PL||[]).find(x=>x.id===+b.dataset.id);if(!o)return;
   await run(()=>api("promo_save",{p:Object.assign({},o,{active:!o.active})}));await loadPromos().catch(()=>{});renderPromos()};
+async function saveLogo(d){const r=await run(()=>api("settings_set",{p:{logo:d}}),null,"lgMsg");if(r===undefined)return;ME.logo=d;LS.set("c_me",ME);brand();refresh();toast(d?"انحفظ الشعار ✓":"انمسح الشعار")}
+document.addEventListener("change",e=>{if(e.target.id!=="logoFile")return;const f=e.target.files[0];e.target.value="";if(!f)return;
+  if(!/^image\//.test(f.type))return setMsg("lgMsg","⚠️ الملف مش صورة","err");
+  const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onerror=()=>setMsg("lgMsg","⚠️ ما قدرناش نقرو الصورة","err");
+    im.onload=()=>{const k=Math.min(1,360/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));
+      c.getContext("2d").drawImage(im,0,0,c.width,c.height);let d=c.toDataURL("image/png");
+      if(d.length>200000){const g=document.createElement("canvas");g.width=c.width;g.height=c.height;const x=g.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,g.width,g.height);x.drawImage(c,0,0);d=g.toDataURL("image/jpeg",.85)}
+      saveLogo(d)};im.src=rd.result};rd.readAsDataURL(f)});
+ACT.logoDel=()=>confirm2("مسح الشعار","الشعار ينشال من المنظومة والطباعة.","مسح",()=>saveLogo(""),true);
+function brand(){const s=$("shopName");if(!s||!ME)return;s.innerHTML=(ME.logo?'<img class="hlogo" src="'+ME.logo+'" alt="">':'')+esc(ME.shop_name)}
 ACT.bkKey=()=>confirm2("مفتاح النسخ التلقائي","لو فيه مفتاح قديم يبطل، ولازم تحط الجديد في أسرار المستودع الخاص.","توليد",async()=>{
   const k=await run(()=>api("backup_key_set"),null,"c2Msg");if(!k)return false;
   $("bkKeyOut").innerHTML='<div class="msg ok">انسخه توا وحطه في GitHub باسم <b dir="ltr">BACKUP_KEY</b>. ما يطلعش مرة ثانية.</div><input class="f mono" dir="ltr" readonly value="'+esc(k)+'" onclick="this.select()"><div class="btns"><button class="btn sm" data-act="copyKey">نسخ</button></div>'});

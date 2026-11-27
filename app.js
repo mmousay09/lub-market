@@ -709,6 +709,19 @@ function alloc(rows){
   docs.forEach(d=>{d.rem=r3(d.amt-d.paid)});
   return {docs,payT,docT:docs.reduce((a,d)=>a+d.amt,0),last,open:docs.filter(d=>d.rem>0.0005)};
 }
+/* تذكير الديون بواتساب */
+const REMK="lub-remind";
+function remindText(p,A){const late=A.open.filter(isLate),lt=late.reduce((a,d)=>a+d.rem,0),b=+p.balance;
+  const L=["السلام عليكم "+p.name+"،","تذكير ودّي من "+ME.shop_name+":","رصيد حسابكم عندنا: "+fm(b)+" "+cur()];
+  if(lt>0.0005){L.push("منه "+fm(lt)+" "+cur()+" فات موعد سداده:");late.forEach(d=>L.push("• "+(d.kind==="open"?"رصيد سابق":"فاتورة #"+d.no)+" الباقي "+fm(d.rem)+" "+cur()+" (متأخرة "+daysAgo(d.due)+" يوم)"))}
+  else if(A.open.length){L.push("الفواتير المفتوحة:");A.open.slice(0,6).forEach(d=>L.push("• "+(d.kind==="open"?"رصيد سابق":"فاتورة #"+d.no)+" الباقي "+fm(d.rem)+" "+cur()+(d.due?" تستحق "+dShow(d.due):" من "+daysAgo(d.at)+" يوم")))}
+  L.push("نرجو التكرم بالسداد في أقرب وقت، وشكراً على تعاملكم معنا.");if(ME.shop_phone)L.push("للتواصل: "+ME.shop_phone);return L.join("\n")}
+const remindAgo=id=>{const t=(LS.get(REMK,{})||{})[id];return t?daysAgo(t):null};
+function remindOpen(p,A){if(!p.phone){toast("ما عندهش رقم هاتف");return}
+  window.open("https://wa.me/"+waPhone(p.phone)+"?text="+encodeURIComponent(remindText(p,A)),"_blank","noopener");
+  const m=LS.get(REMK,{})||{};m[p.id]=new Date().toISOString();LS.set(REMK,m)}
+ACT.remind=b=>{const r=(REPX.parties||[]).find(x=>x.p.id===+b.dataset.id);if(!r)return;remindOpen(r.p,r.A);const s=b.closest("tr")&&b.closest("tr").querySelector(".rago");if(s)s.textContent="ذكّرته اليوم"};
+ACT.remindPt=()=>{if(CURPT&&PDOCS)remindOpen(CURPT,PDOCS)};
 VIEWS.accounts=()=>{
   const adm=isAdmin();if(!adm)PTYPE="c";
   const cs=PARTIES.filter(x=>x.kind==="c"),ss=PARTIES.filter(x=>x.kind==="s");
@@ -742,7 +755,7 @@ async function partyDlg(id,keepF){
       tbl([["الفاتورة"],["التاريخ"],["المبلغ",1],["المسدد",1],["الباقي",1]],shown.map(d=>'<tr'+(d.sale_id||d.purchase_id?' tabindex="0" data-act="'+(d.sale_id?"openSale":"openPur")+'" data-id="'+(d.sale_id||d.purchase_id)+'"':'')+'><td>'+(d.kind==="open"?"افتتاحي":'<span dir="ltr">#'+d.no+'</span>')+' <span class="tag '+(d.rem<=0.0005?"g":d.paid>0?"w":"")+'">'+(d.rem<=0.0005?"مسددة":d.paid>0?"جزئياً":"ما تسددتش")+'</span>'+(d.rem>0.0005?'<small style="display:block;color:var(--muted)">عمرها '+daysAgo(d.at)+' يوم'+(d.due?(isLate(d)?' · <b class="neg">متأخرة '+daysAgo(d.due)+' يوم</b>':' · تستحق <span dir="ltr">'+dShow(d.due)+'</span>'):'')+'</small>':'')+'</td><td dir="ltr" style="text-align:right">'+dShow(d.at)+'</td>'+td(d.amt)+td(d.paid)+'<td class="r"><b>'+fm(d.rem)+'</b></td></tr>'),null,PINVF==="open"?"كل الفواتير مسددة.":"ما فيش فواتير.")+
       '<div class="hint">الدفعات اللي مش مربوطة بفاتورة تتحسب على أقدم فاتورة أول. اضغط على الفاتورة باش تفتحها.</div></div>'+
     '<div class="sec"><h3>كشف الحساب</h3>'+tbl([["التاريخ"],["البيان"],[c?"عليه":"له",1],[c?"دفع":"دفعنا",1],["الرصيد",1]],STMT.map(x=>'<tr><td dir="ltr" style="text-align:right">'+dShow(x.at)+'</td><td class="nm" style="font-weight:400">'+esc(x.text)+'</td><td class="r">'+(x.up?fm(x.up):"")+'</td><td class="r">'+(x.down?fm(x.down):"")+'</td><td class="r"><b>'+fm(x.run)+'</b></td></tr>'),null,"ما فيش حركات.")+
-      '<div class="btns"><button class="btn" data-act="printStmt">🖨️ طباعة كشف الحساب</button>'+(pt.phone?'<a class="btn" target="_blank" rel="noopener" href="https://wa.me/'+waPhone(pt.phone)+'?text='+encodeURIComponent(ME.shop_name+"\n"+pt.name+"\n"+(c?"رصيدك عندنا: ":"رصيدكم علينا: ")+fm(b)+" "+cur()+(A.open.length?"\nفواتير مفتوحة: "+A.open.map(d=>(d.kind==="open"?"افتتاحي":"#"+d.no)+" الباقي "+fm(d.rem)).join("، "):""))+'">واتساب</a>':'')+'<button class="btn" data-act="copyStmt">نسخ</button><button class="btn" data-act="xlsStmt">⬇️ Excel</button></div></div>'+
+      '<div class="btns"><button class="btn" data-act="printStmt">🖨️ طباعة كشف الحساب</button>'+(pt.phone&&c&&b>0.0005?'<button class="btn" data-act="remindPt">واتساب تذكير'+(remindAgo(pt.id)!=null?' <small>(آخر مرة '+(remindAgo(pt.id)?"من "+remindAgo(pt.id)+" يوم":"اليوم")+')</small>':'')+'</button>':'')+(pt.phone&&!(c&&b>0.0005)?'<a class="btn" target="_blank" rel="noopener" href="https://wa.me/'+waPhone(pt.phone)+'?text='+encodeURIComponent(ME.shop_name+"\n"+pt.name+"\n"+(c?"رصيدك عندنا: ":"رصيدكم علينا: ")+fm(b)+" "+cur()+(A.open.length?"\nفواتير مفتوحة: "+A.open.map(d=>(d.kind==="open"?"افتتاحي":"#"+d.no)+" الباقي "+fm(d.rem)).join("، "):""))+'">واتساب</a>':'')+'<button class="btn" data-act="copyStmt">نسخ</button><button class="btn" data-act="xlsStmt">⬇️ Excel</button></div></div>'+
     (adm?'<form class="sec" data-form="partyEdit"><h3>بيانات الحساب</h3><div class="grid2"><label>الاسم<input class="f" name="name" value="'+esc(pt.name)+'" autocomplete="off"></label><label>الهاتف<input class="f" name="phone" dir="ltr" value="'+esc(pt.phone)+'" autocomplete="off"></label>'+
       (c?'<label>سقف للتنبيه بس<input class="f" name="warn" dir="ltr" inputmode="decimal" value="'+(pt.warn_limit>0?pt.warn_limit:"")+'" placeholder="فاضي = بدون"></label><label>الأسعار<select class="f" name="level"><option value="retail">قطاعي</option><option value="ws"'+(pt.price_level==="ws"?" selected":"")+'>جملة</option></select></label>':'')+
       '<label>مدة السداد (أيام)<input class="f" name="terms" inputmode="numeric" value="'+(pt.terms_days||"")+'" placeholder="0 = بدون موعد"></label></div><label class="chk"><input type="checkbox" name="off"'+(pt.active?"":" checked")+'> موقوف: ما يطلعش في القوائم</label><div class="btns"><button class="btn">حفظ البيانات</button><span class="msg" id="peMsg"></span></div></form>':''),"wide");
@@ -845,7 +858,14 @@ async function partyRep(kind){
   return '<div class="kpis">'+kpi(c?"ديون لنا على العملاء":"علينا للموردين",fm(tb),owing.length+(c?" عميل":" مورد"),"main")+kpi("متأخر عن موعده",fm(sumBy(late,x=>x.v)),late.length+(c?" عميل":" مورد"),"bad")+kpi("فواتير ما تسددتش",sumBy(rows,r=>r.A.open.length),"كلها أو جزء منها","warn")+kpi("أقدم دين",old?old.age+" يوم":"-",old?esc(old.p.name):"")+'</div>'+
     '<div class="cols"><div class="panel"><div class="ph2"><h2>'+(c?"أرصدة العملاء":"أرصدة الموردين")+'</h2><button class="btn sm" data-act="copyRep" data-k="parties">نسخ</button></div>'+tbl([[c?"العميل":"المورد"],[c?"الفواتير":"المشتريات",1],["المدفوع",1],["الرصيد",1]],rows.map(r=>'<tr tabindex="0" data-act="party" data-id="'+r.p.id+'"><td class="nm">'+esc(r.p.name)+'<small>'+(r.A.open.length?r.A.open.length+" فاتورة مفتوحة · أقدمها "+r.age+" يوم":"ما فيش فواتير مفتوحة")+(r.A.open.some(isLate)?' · <b class="neg">متأخر '+fm(sumBy(r.A.open.filter(isLate),d=>d.rem))+'</b>':'')+(r.A.last?" · آخر دفعة "+dShow(r.A.last):"")+'</small></td>'+td(r.A.docT)+td(r.A.payT)+'<td class="r"><b>'+fm(r.p.balance)+'</b></td></tr>'),
       '<tr><td>المجموع</td>'+td(sumBy(rows,r=>r.A.docT))+td(sumBy(rows,r=>r.A.payT))+td(sumBy(rows,r=>r.p.balance))+'</tr>')+'</div>'+
-    '<div class="panel"><div class="ph2"><h2>أعمار الديون</h2></div>'+tbl([["عمر الفاتورة"],["الباقي",1]],aging.map(([t,v])=>'<tr><td>'+t+'</td>'+td(v)+'</tr>'))+'<div class="pb hint">الباقي من الفواتير المفتوحة حسب عمرها.</div></div></div>';
+    '<div class="panel"><div class="ph2"><h2>أعمار الديون</h2></div>'+tbl([["عمر الفاتورة"],["الباقي",1]],aging.map(([t,v])=>'<tr><td>'+t+'</td>'+td(v)+'</tr>'))+'<div class="pb hint">الباقي من الفواتير المفتوحة حسب عمرها.</div></div></div>'+
+    (c&&owing.length?remindPanel(owing):'');
+}
+function remindPanel(owing){
+  const L=owing.map(r=>({r,lt:sumBy(r.A.open.filter(isLate),d=>d.rem)})).sort((a,b)=>b.lt-a.lt||b.r.age-a.r.age);
+  return '<div class="panel"><div class="ph2"><h2>تذكير العملاء بواتساب</h2></div>'+tbl([["العميل"],["متأخر",1],["الرصيد",1],["آخر تذكير"],[""]],L.map(({r,lt})=>{const g=remindAgo(r.p.id);
+    return '<tr><td class="nm">'+esc(r.p.name)+(r.p.phone?'<small dir="ltr" style="text-align:right">'+esc(r.p.phone)+'</small>':'<small>ما عندهش رقم</small>')+'</td><td class="r">'+(lt>0.0005?'<b class="neg">'+fm(lt)+'</b>':'-')+'</td>'+td(r.p.balance)+'<td class="rago">'+(g==null?"ما تذكّرش":g===0?"ذكّرته اليوم":"من "+g+" يوم")+'</td><td>'+(r.p.phone?'<button class="btn sm" data-act="remind" data-id="'+r.p.id+'">واتساب</button>':'')+'</td></tr>'}))+
+    '<div class="pb hint">الرسالة فيها الرصيد والفواتير المتأخرة وأيامها. واتساب يفتح والرسالة جاهزة، وانت تضغط إرسال.</div></div>';
 }
 REP.cust=()=>partyRep("c");REP.sup=()=>partyRep("s");
 let SSORT="id";

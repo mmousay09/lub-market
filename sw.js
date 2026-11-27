@@ -1,5 +1,5 @@
 // يخلي الموقع يفتح حتى لو النت مقطوع: يجيب الجديد من النت، ولو ما فيش يفتح آخر نسخة محفوظة
-const C = "lub-v4";
+const C = "lub-v5";
 const FILES = ["./", "./index.html", "./app.js", "./config.js"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(C).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
